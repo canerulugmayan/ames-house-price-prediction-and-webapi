@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>TÜBİTAK Ev Fiyat Tahmini</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 50px; }
+        .form-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 400px; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        #sonuc { margin-top: 20px; text-align: center; font-size: 1.2em; font-weight: bold; color: #333; }
+    </style>
+</head>
+<body>
+    <div class="form-card">
+        <h2>Ev Fiyatını Hesapla</h2>
+
+        <div class="input-group">
+            <label>Genel Kalite (1-10)</label>
+            <input type="number" id="OverallQual" value="7">
+        </div>
+
+        <div class="input-group">
+            <label>Yapım Yılı</label>
+            <input type="number" id="YearBuilt" value="2005">
+        </div>
+
+        <div class="input-group">
+            <label>Arsa Alanı (Metrekare)</label>
+            <input type="number" id="LotArea" value="5000">
+        </div>
+
+        <button onclick="hesapla()">HESAPLA</button>
+        <div id="sonuc"></div>
+    </div>
+
+    <script>
+        async function hesapla() {
+            const resDiv = document.getElementById('sonuc');
+            resDiv.innerText = "Hesaplanıyor...";
+
+            const data = {
+                OverallQual: parseInt(document.getElementById('OverallQual').value),
+                YearBuilt: parseInt(document.getElementById('YearBuilt').value),
+                LotArea: parseFloat(document.getElementById('LotArea').value),
+                TotalBsmtSF: 1000, FlrSF1st: 1000, FlrSF2nd: 0, FullBath: 2, HalfBath: 0, GarageArea: 500
+            };
+
+            try {
+                // Port numarasının app.py ile (8001) aynı olduğundan emin ol
+                const response = await fetch('http://127.0.0.1:8001/predict', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                resDiv.innerText = result.predicted_price ? "Tahmin: $" + result.predicted_price.toLocaleString() : "Hata: " + result.detail;
+            } catch (e) {
+                resDiv.innerText = "Sunucuya bağlanılamadı!";
+            }
+        }
+    </script>
+</body>
+</html>
