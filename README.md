@@ -22,7 +22,10 @@ Web: FastAPI, Uvicorn, Jinja2, HTML5/CSS3
 Görselleştirme: Matplotlib, Seaborn
 
 📊 Model Performansı
-Proje kapsamında yapılan testlerde en iyi sonucu XGBoost Regressor vermiştir. Modellerin karşılaştırmalı test sonuçları ve görselleştirilmiş başarı oranları proje dizinindeki model_performans.png dosyasında mevcuttur.
+Proje kapsamında yapılan testlerde en iyi sonucu AdaBoost Regressor vermiştir. Modellerin karşılaştırmalı test sonuçları ve görselleştirilmiş başarı oranları proje dizinindeki model_performans.png dosyasında mevcuttur.
+
+<img width="1000" height="600" alt="model_performans" src="https://github.com/user-attachments/assets/d6c272b3-90d6-484e-afe8-6cadf767c655" />
+
 
 💻 Kurulum ve Çalıştırma
 Gerekli Kütüphaneleri Yükleyin:
