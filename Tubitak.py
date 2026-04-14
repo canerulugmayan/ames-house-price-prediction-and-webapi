@@ -65,7 +65,6 @@ Bu yüzden Kaggle bu yarışmada RMSLE (Root Mean Squared Log Error) kullanıyor
 
  Özet: SalePrice EDA’sı sana sadece “normal dağılım var mı” bilgisini vermez. Aynı zamanda:
 Outlier var mı?
-
 Hangi dönüşüm (log, box-cox, yeo-johnson) lazım?
 Hangi metriği kullanmak daha mantıklı?
 Hangi modeller daha uygun?
@@ -114,7 +113,7 @@ plot_corr_matrix(df,15,"SalePrice")
 Korelasyon ne işe yarar?
 1)Özelliklerin hedef değişkenle ilişkisini anlamak
 Korelasyon, her özelliğin hedef değişkenle ne kadar ilişkili olduğunu hızlıca gösterir.
-Örnek: Ev fiyatı tahmini yapıyorsan:
+Örnek: Ev fiyatı tahmini yapıyorsak:
 OverallQual ile SalePrice korelasyonu 0.8 → güçlü ilişki → bu özelliği modelde mutlaka kullan.
 GarageYrBlt ile SalePrice korelasyonu 0.05 → neredeyse yok → modelde çok fayda sağlamaz, çıkarılabilir.
 Bu, feature selection yani önemli özellikleri seçmek için pratik bir yöntemdir.
@@ -432,7 +431,8 @@ df["HasGarageType"]=df["GarageType"].notna().astype(int)
 
 X=df.drop("SalePrice",axis=1)
 y=df["SalePrice"]
-y_log=np.log1p(y)
+# KRİTİK DÜZELTME: Log dönüşümünü yap ve DEĞİŞKENİ GÜNCELLE
+y = np.log1p(y)
 #Bu modeller, hata terimlerinin normal dağılıma yakın olmasını ister.Sağa çarpık dağılım yani model, çok pahalı evleri iyi tahmin edemeyebilir.
 #bu yüzden log dönüşümü uyguladık ve eda kısmında da zaten bunu anlattım tahminlerimizi bu değişken üzerinden yapacağız
 
@@ -441,34 +441,8 @@ X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2,random_sta
 
 "FEATURE ENGİNEERİNGE DEVAM EDİYORUZ EĞER BU AŞAMADAN ÖNCE ENCODİNG YAPSAYDIK DATA LEAKAGE YAŞANIRDI !!!"
 #6)Kendi ordinal encoder fonksiyonum
-from sklearn.base import BaseEstimator,TransformerMixin
-class OrdinalEncoderr(BaseEstimator,TransformerMixin):
-#BaseEstimator → sklearn ile uyumlu hale getiriyor (fit/parametre yönetimi).
-#TransformerMixin → bize fit_transform metodunu otomatik kazandırıyor.
-    def __init__(self,mappings,fillna_map=None):
-        #mappings {kolon adi: {kategori: değer}}
-        self.mappings=mappings
-        # fillna_map: {col: value_to_fill_before_map} (ör. 'BsmtQual':'NoBasement')
-        self.fillna_map=fillna_map or {}
-    def fit(self,X,y=None):
-        #Scikit-learn uyumlu olması için fit metodunu yazıyoruz. çok bir işe yaramıyor sadece bulunmalı yani
-        #Bu encoder’ın fit sırasında aslında bir şey öğrenmesine gerek yok (çünkü mapping zaten elimizde).
-        #Sadece self döndürüyoruz.
-        return self
-    def transform(self, X):
-    # Önce X.copy() yapıyoruz, böylece orijinal dataframe’i bozmuyoruz, üzerinde çalışacağımız kopyayı alıyoruz.
-        Xc = X.copy()
-        for col, mapping in self.mappings.items():
-            if col not in Xc.columns:
-                continue
-            # 1) önce mantıklı bir fill (örn. 'NoBasement' gibi)
-            if col in self.fillna_map:
-                Xc[col] = Xc[col].fillna(self.fillna_map[col])
-            # 2) map et
-            Xc[col] = Xc[col].map(mapping)
-            # 3) eğer hala NaN varsa (map e.g. unseen), median veya 0 ile doldur
-            Xc[col] = Xc[col].fillna(Xc[col].median())
-        return Xc
+from sklearn.base import BaseEstimator
+from custom_transformers import OrdinalEncoderr
 mappings = {
     "ExterQual": {"Po":1, "Fa":2, "TA":3, "Gd":4, "Ex":5},
     "ExterCond": {"Po":1, "Fa":2, "TA":3, "Gd":4, "Ex":5},
@@ -717,42 +691,39 @@ def run_gridsearch(grid, X_train, y_train):
 
 results = []  # tüm sonuçları buraya ekleyeceğiz
 
+# --- MODEL EĞİTİM DÖNGÜSÜ ---
+best_model = None
+best_r2 = -float('inf')
+
 for model_key, model_info in models_params.items():
     print(f"{model_key} için eğitim başlıyor...")
+    current_trained_model = None
 
+    # 1. Eğitim ve Hiperparametre Optimizasyonu
     if model_info['params']:
         pipe = Pipeline([('model', model_info['model'])])
-
         try:
-            # Önce GridSearch dene
             grid = GridSearchCV(pipe, model_info['params'], cv=5, scoring='r2', n_jobs=-1)
-            best_model = run_gridsearch(grid, X_train, y_train).best_estimator_
-        except timeout_decorator.timeout_decorator.TimeoutError:
-            print(f"{model_key} -> GridSearch çok uzun sürdü, RandomizedSearch'e geçiliyor...")
-            rand = RandomizedSearchCV(
-                pipe,
-                model_info['params'],
-                cv=5,
-                scoring='r2',
-                n_jobs=-1,
-                n_iter=30,  # random arama sayısı
-                random_state=42
-            )
+            grid_result = run_gridsearch(grid, X_train, y_train)
+            current_trained_model = grid_result.best_estimator_
+        except:
+            print(f"{model_key} -> RandomizedSearch'e geçiliyor...")
+            rand = RandomizedSearchCV(pipe, model_info['params'], cv=5, scoring='r2', n_jobs=-1, n_iter=30, random_state=42)
             rand.fit(X_train, y_train)
-            best_model = rand.best_estimator_
+            current_trained_model = rand.best_estimator_
     else:
-        best_model = model_info['model']
-        best_model.fit(X_train, y_train)
+        current_trained_model = model_info['model']
+        current_trained_model.fit(X_train, y_train)
 
-    # Tahminler
-    y_train_pred = best_model.predict(X_train)
-    y_test_pred = best_model.predict(X_test)
+    # 2. Tahminler (Tüm modeller için ortak alan)
+    y_train_pred = current_trained_model.predict(X_train)
+    y_test_pred = current_trained_model.predict(X_test)
 
-    # Skorlar
+    # 3. Skorlar (Tüm modeller için ortak alan)
     model_train_mae, model_train_rmse, model_train_r2 = evaluate_model(y_train, y_train_pred)
     model_test_mae, model_test_rmse, model_test_r2 = evaluate_model(y_test, y_test_pred)
 
-    # Dict olarak results'a ekle
+    # 4. Sonuçları listeye ekle
     results.append({
         "Model": model_key,
         "Train_RMSE": model_train_rmse,
@@ -763,12 +734,23 @@ for model_key, model_info in models_params.items():
         "Test_R2": model_test_r2
     })
 
+    # 5. En iyi Modeli Belirleme (Test R2'ye göre)
+    if model_test_r2 > best_r2:
+        best_r2 = model_test_r2
+        best_model = current_trained_model
+
+
 # --- SONUÇLARIN TABLOSU ---
 df_results = pd.DataFrame(results)
+# Test R2'ye göre sırala
 df_results_sorted = df_results.sort_values(by="Test_R2", ascending=False)
 
-print("\nMODELLERİN KARŞILAŞTIRMASI")
-print(df_results_sorted)
+print("\n" + "="*100)
+print("MODELLERİN KARŞILAŞTIRMASI")
+print("="*100)
+# Tablonun tamamını (tüm sütunları) terminalde gösterir
+print(df_results_sorted.to_string(index=False))
+print("="*100)
 
 # --- GÖRSELLEŞTİRME ---
 plt.figure(figsize=(10, 6))
@@ -776,39 +758,27 @@ sns.barplot(x="Test_R2", y="Model", data=df_results_sorted, palette="viridis")
 plt.title("Modellerin Test R2 Skorları")
 plt.xlabel("Test R2")
 plt.ylabel("Model")
+plt.savefig("model_performans.png")
 plt.show()
 
+# --- KAYIT İŞLEMİ ---
 import joblib
-# 1. En iyi modeli belirle (Örn: R2 skoru en yüksek olan)
-best_model_name = df_results_sorted.iloc[0]["Model"]
-# models_params içinden ilgili eğitilmiş modeli bulup seçiyoruz
-# Not: best_model nesnesinin yukarıdaki döngüde 'best_model' olarak kaldığını varsayıyoruz
-final_model = best_model
+# all_cols_list için preprocessor'ı kullanıyoruz
+if hasattr(preprocessor, "feature_names_in_"):
+    all_cols_list = preprocessor.feature_names_in_.tolist()
+else:
+    all_cols_list = numerical_cols.tolist() + categorical_cols.tolist() # Yedek plan
 
-# 2. Kayıt işlemi
-# Sadece modeli değil, veriyi dönüştüren her şeyi paketliyoruz
 artifacts = {
-    "model": final_model,
+    "model": best_model,
     "preprocessor": preprocessor,
-    "mappings": mappings, # Özel OrdinalEncoder eşleşmeleriniz
     "numerical_cols": numerical_cols.tolist(),
-    "categorical_cols": categorical_cols.tolist()
+    "categorical_cols": categorical_cols.tolist(),
+    "all_cols": all_cols_list
 }
 
 joblib.dump(artifacts, 'house_price_package.pkl')
-print(f"Başarıyla Kaydedildi: {best_model_name}")
-
-import joblib
-
-# Eğitim kodunun (Tubitak.py) sonuna ekleyin
-# Not: 'preprocessor' nesnesi kodunuzdaki ColumnTransformer nesnesidir.
-joblib.dump(preprocessor, 'data_preprocessor.pkl')
-# Ayrıca en iyi modelinizi de kaydedin
-joblib.dump(best_model, 'house_price_model.pkl')
-
-print("Dosyalar başarıyla oluşturuldu!")
-
-
+print("işlem tamamlandı")
 
 
 
