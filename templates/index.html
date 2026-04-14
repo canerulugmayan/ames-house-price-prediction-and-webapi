@@ -1,66 +1,221 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>TÜBİTAK Ev Fiyat Tahmini</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ev Fiyat Tahmini</title>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 50px; }
-        .form-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 400px; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        #sonuc { margin-top: 20px; text-align: center; font-size: 1.2em; font-weight: bold; color: #333; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #eef2f3;
+            display: flex;
+            justify-content: center;
+            padding: 40px;
+        }
+        .form-card {
+            background: white;
+            padding: 35px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 500px;
+        }
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #28a745;
+            padding-bottom: 10px;
+        }
+        .input-group { margin-bottom: 18px; }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dcdde1;
+            border-radius: 8px;
+            box-sizing: border-box;
+            transition: 0.3s;
+        }
+        input:focus, select:focus {
+            border-color: #28a745;
+            outline: none;
+            box-shadow: 0 0 8px rgba(40,167,69,0.2);
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+        button:hover { background: #218838; transform: translateY(-2px); }
+        #result {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            min-height: 25px;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
-    <div class="form-card">
-        <h2>Ev Fiyatını Hesapla</h2>
 
-        <div class="input-group">
-            <label>Genel Kalite (1-10)</label>
-            <input type="number" id="OverallQual" value="7">
-        </div>
+<div class="form-card">
+    <h2>Ev Fiyat Tahmini</h2>
 
-        <div class="input-group">
-            <label>Yapım Yılı</label>
-            <input type="number" id="YearBuilt" value="2005">
-        </div>
-
-        <div class="input-group">
-            <label>Arsa Alanı (Metrekare)</label>
-            <input type="number" id="LotArea" value="5000">
-        </div>
-
-        <button onclick="hesapla()">HESAPLA</button>
-        <div id="sonuc"></div>
+    <div class="input-group">
+        <label for="OverallQual">Genel Malzeme ve İşçilik Kalitesi (1-10)</label>
+        <input type="number" id="OverallQual" placeholder="Örn: 7" min="1" max="10" value="6">
     </div>
 
-    <script>
-        async function hesapla() {
-            const resDiv = document.getElementById('sonuc');
-            resDiv.innerText = "Hesaplanıyor...";
+    <div class="input-group">
+        <label for="GrLivArea">Zemin Üstü Yaşam Alanı (Metrekare - sqft)</label>
+        <input type="number" id="GrLivArea" placeholder="Örn: 1500" value="1200">
+    </div>
 
-            const data = {
-                OverallQual: parseInt(document.getElementById('OverallQual').value),
-                YearBuilt: parseInt(document.getElementById('YearBuilt').value),
-                LotArea: parseFloat(document.getElementById('LotArea').value),
-                TotalBsmtSF: 1000, FlrSF1st: 1000, FlrSF2nd: 0, FullBath: 2, HalfBath: 0, GarageArea: 500
-            };
+    <div class="input-group">
+        <label for="TotalBsmtSF">Toplam Bodrum Alanı (Metrekare - sqft)</label>
+        <input type="number" id="TotalBsmtSF" placeholder="Örn: 800" value="800">
+    </div>
 
-            try {
-                // Port numarasının app.py ile (8001) aynı olduğundan emin ol
-                const response = await fetch('http://127.0.0.1:8001/predict', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(data)
-                });
-                const result = await response.json();
-                resDiv.innerText = result.predicted_price ? "Tahmin: $" + result.predicted_price.toLocaleString() : "Hata: " + result.detail;
-            } catch (e) {
-                resDiv.innerText = "Sunucuya bağlanılamadı!";
+    <div class="input-group">
+        <label for="YearBuilt">Yapım Yılı</label>
+        <input type="number" id="YearBuilt" placeholder="Örn: 2005" value="2000">
+    </div>
+
+    <div class="input-group">
+        <label for="LotArea">Arsa Alanı (sqft)</label>
+        <input type="number" id="LotArea" placeholder="Örn: 5000" value="5000">
+    </div>
+
+    <div class="input-group">
+        <label for="FullBath">Tam Banyo Sayısı</label>
+        <input type="number" id="FullBath" value="2">
+    </div>
+
+    <div class="input-group">
+        <label for="Neighborhood">Mahalle (Neighborhood)</label>
+        <select id="Neighborhood">
+            <option value="CollgCr">College Creek</option>
+            <option value="Veenker">Veenker</option>
+            <option value="Crawfor">Crawford</option>
+            <option value="NoRidge">Northridge</option>
+            <option value="Mitchel">Mitchell</option>
+            <option value="Somerst">Somerset</option>
+            <option value="NWAmes">Northwest Ames</option>
+            <option value="OldTown" selected>Old Town</option>
+            <option value="BrkSide">Brookside</option>
+            <option value="Sawyer">Sawyer</option>
+            <option value="NAmes">North Ames</option>
+            <option value="IDOTRR">IDOTRR</option>
+            <option value="MeadowV">Meadow Village</option>
+            <option value="Edwards">Edwards</option>
+            <option value="Timber">Timberland</option>
+            <option value="Gilbert">Gilbert</option>
+            <option value="StoneBr">Stone Brook</option>
+            <option value="ClearCr">Clear Creek</option>
+            <option value="NPkVill">Northpark Villa</option>
+            <option value="Blmngtn">Bloomington Heights</option>
+            <option value="BrDale">Briardale</option>
+            <option value="SWISU">SWISU</option>
+            <option value="Blueste">Bluestem</option>
+        </select>
+    </div>
+
+    <button onclick="predictPrice()">Fiyat Tahmin Et</button>
+
+    <div id="result"></div>
+
+    <div class="footer">
+        KTÜ İstatistik ve Bilgisayar Bilimleri - Caner Uluğmayan
+    </div>
+</div>
+
+<script>
+    async function predictPrice() {
+        const resDiv = document.getElementById('result');
+        resDiv.innerText = "🔍 Hesaplanıyor...";
+        resDiv.style.color = "#2c3e50";
+
+        // HTML'den değerleri çek
+        const grLivArea = parseFloat(document.getElementById('GrLivArea').value);
+        const yearBuilt = parseInt(document.getElementById('YearBuilt').value);
+        const totalBsmt = parseFloat(document.getElementById('TotalBsmtSF').value);
+
+        // API'ya gidecek veriyi hazırla
+        // NOT: İsimler modelin beklediği formatta (1stFlrSF gibi) gönderiliyor
+        const data = {
+            OverallQual: parseInt(document.getElementById('OverallQual').value),
+            YearBuilt: yearBuilt,
+            GrLivArea: grLivArea,
+            TotalBsmtSF: totalBsmt,
+            FullBath: parseInt(document.getElementById('FullBath').value),
+            LotArea: parseFloat(document.getElementById('LotArea').value),
+            Neighborhood: document.getElementById('Neighborhood').value,
+
+            // Modelin hata vermemesi için kritik ek kolonlar
+            "1stFlrSF": grLivArea,
+            "2ndFlrSF": 0,
+            "HalfBath": 0,
+            "BsmtFullBath": 0,
+            "YearRemodAdd": yearBuilt,
+            "GarageArea": 0,
+            "GarageCars": 0
+        };
+
+        console.log("Sunucuya Gönderilen Veri:", data);
+
+        try {
+            const response = await fetch('http://127.0.0.1:8001/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.predicted_price) {
+                // Fiyatı dolar formatında güzelleştir
+                const formattedPrice = new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                }).format(result.predicted_price);
+
+                resDiv.innerText = "Tahmin Edilen Değer: " + formattedPrice;
+                resDiv.style.color = "#28a745";
+            } else {
+                resDiv.innerText = "Hata: " + (result.detail || "Tahmin yapılamadı");
+                resDiv.style.color = "#e74c3c";
             }
+        } catch (e) {
+            console.error(e);
+            resDiv.innerText = "❌ Sunucuya bağlanılamadı! (app.py açık mı?)";
+            resDiv.style.color = "#e74c3c";
         }
-    </script>
+    }
+</script>
+
 </body>
 </html>
