@@ -1,41 +1,43 @@
 🏠 Ames House Price Prediction & Web API
-Bu proje, Kaggle'ın meşhur Ames Housing veri setini kullanarak, ev özelliklerinden piyasa değerini tahmin eden bir makine öğrenmesi modelidir. Proje sadece bir analiz dosyası değil, aynı zamanda FastAPI kullanılarak bir web servisine dönüştürülmüş çalışan bir üründür.
+Bu proje, Ames Housing veri setini kullanarak ev fiyatlarını tahmin etmek amacıyla geliştirilmiş uçtan uca bir makine öğrenmesi projesidir. Proje, veri analizinden (EDA) başlayarak karmaşık özellik mühendisliği (Feature Engineering), model seçimi ve bir Web API (FastAPI) üzerinden modelin sunulmasını kapsamaktadır.
 
-🎯 Projenin Amacı
-Karmaşık ev özelliklerini (kalite, alan, yapım yılı, mahalle vb.) analiz ederek, konut fiyatlarını en düşük hata payıyla tahmin edebilecek bir sistem kurmak ve bu sistemi bir web arayüzü üzerinden erişilebilir kılmaktır.
+🚀 Proje Özellikleri
+Gelişmiş Veri Analizi (EDA): Korelasyon matrisleri, outlier tespiti ve hedef değişken (SalePrice) dağılım analizi.
 
-🛠️ Kullanılan Teknolojiler
-Veri Analizi & Görselleştirme: Pandas, NumPy, Seaborn, Matplotlib.
+Özellik Mühendisliği: Toplam metrekare (TotalSF), banyo sayısı (TotalBathrooms) ve evin yaşı gibi türetilmiş özelliklerin oluşturulması.
 
-Makine Öğrenmesi: Scikit-Learn, XGBRegressor.
+Veri Ön İşleme: Logaritmik dönüşüm (Log Transformation), Winsorize (Outlier baskılama), Ordinal ve One-Hot Encoding işlemleri.
 
-Model Paketleme: Joblib.
+Model Karşılaştırma: Linear Regression, Lasso, Ridge, Random Forest ve XGBoost gibi 10 farklı modelin R² ve RMSE metriklerine göre değerlendirilmesi.
 
-Backend API: FastAPI (Python).
+Web Arayüzü: FastAPI altyapısı ve modern bir HTML/JS arayüzü ile kullanıcı dostu fiyat tahmini.
 
-Frontend: HTML5, CSS3, JavaScript (Jinja2 Templates).
+🛠 Kullanılan Teknolojiler
+Dil: Python 3.12
 
-🚀 Öne Çıkan Özellikler
-Feature Engineering: TotalSF (Toplam Metrekare), Age (Ev Yaşı) ve TotalBathrooms gibi yeni özellikler türetilerek model performansı artırıldı.
+Kütüphaneler: Scikit-learn, XGBoost, Pandas, NumPy, Joblib
 
-Data Pipeline: Ham veri; sayısal ölçeklendirme (StandardScaler) ve kategorik dönüştürme (OneHotEncoder/OrdinalEncoder) aşamalarından geçirilerek otomatikleştirildi.
+Web: FastAPI, Uvicorn, Jinja2, HTML5/CSS3
 
-Log Transformation: Fiyat dağılımındaki çarpıklığı (skewness) gidermek için logaritmik dönüşüm uygulandı.
+Görselleştirme: Matplotlib, Seaborn
 
-Real-time Prediction: Kullanıcı arayüzünden girilen veriler anlık olarak API'ye gönderilir ve modelden gelen tahmin kullanıcıya gösterilir.
+📊 Model Performansı
+Proje kapsamında yapılan testlerde en iyi sonucu XGBoost Regressor vermiştir. Modellerin karşılaştırmalı test sonuçları ve görselleştirilmiş başarı oranları proje dizinindeki model_performans.png dosyasında mevcuttur.
 
-📈 Model Performansı
-Kullanılan Algoritma: XGBoost
+💻 Kurulum ve Çalıştırma
+Gerekli Kütüphaneleri Yükleyin:
 
-R² Skoru: ~0.89+ (Modelin başarısına göre bu rakamı güncelle)
+Bash
+pip install fastapi uvicorn pandas numpy scikit-learn xgboost joblib jinja2
+Modeli Eğitin ve Paketleyin:
 
-Hata Metriği: RMSE (Root Mean Squared Error)
+Bash
+python Tubitak.py
+Bu işlem sonunda house_price_package.pkl dosyası oluşturulacaktır.
 
-🖥️ Nasıl Çalıştırılır?
-Depoyu klonlayın: git clone https://github.com/kullaniciadin/proje-adin.git
+Web API'yi Başlatın:
 
-Kütüphaneleri kurun: pip install -r requirements.txt
-
-Sunucuyu başlatın: python app.py
-
-Tarayıcınızda http://127.0.0.1:8001 adresine gidin.
+Bash
+python app.py
+Erişim:
+Tarayıcınızdan http://127.0.0.1:8001 adresine giderek ev fiyatlarını tahmin etmeye başlayabilirsiniz.
